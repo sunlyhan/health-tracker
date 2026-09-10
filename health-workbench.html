@@ -1747,8 +1747,8 @@ function openEditor(key, item){
       <div class="field"><label>优先级</label><div class="seg" id="f-prio">${(m.priorities||[]).map(p=>`<div class="opt ${p.key===d.priority?'on':''}" data-v="${p.key}">${p.label}</div>`).join("")}</div></div>
       <div class="field"><label>备注</label><textarea id="f-note" placeholder="补充说明">${esc(d.note||'')}</textarea></div>`;
   } else if(m.type==="checkin"){
-    fields=`<div class="field"><label>打卡项</label><input id="f-title" value="${attr(d.title)}" placeholder="例如：喝够 8 杯水"/></div>
-      <p class="sub" style="margin:0">保存后可在列表点击左侧方块打卡；连续天数自动统计，每天从零开始。</p>`;
+    fields=`<div class="field"><label>打卡项名称</label><input id="f-title" value="${attr(d.title)}" placeholder="输入打卡项名称，如：打篮球" autocomplete="off"/></div>
+      <p class="sub" style="margin:0;font-size:11px;color:var(--text-tertiary)">保存后自动按统一样式显示，点击左侧方块即可打卡</p>`;
   } else if(m.type==="progress"){
     fields=`<div class="field"><label>名称</label><input id="f-title" value="${attr(d.title)}" placeholder="书名 / 目标"/></div>
       <div class="frow"><div class="field"><label>当前</label><input id="f-cur" type="number" value="${d.current??0}"/></div>
@@ -1770,9 +1770,12 @@ function openEditor(key, item){
       <div class="field"><label>日期</label><input id="f-date" type="date" value="${d.date||isoToday()}"/></div>`;
   }
 
-  // layout variant selector
-  const layoutOpts=[{v:'default',l:'标准'},{v:'feature',l:'大图'},{v:'quote',l:'引文'}];
-  fields=`<div class="field"><label>卡片样式</label><div class="seg" id="f-layout">${layoutOpts.map(o=>`<div class="opt ${o.v===(d.layout||'default')?'on':''}" data-v="${o.v}">${o.l}</div>`).join("")}</div></div>`+fields;
+  // layout variant selector — only for non-checkin types (checkin uses standard list)
+  const isCheckin = m.type==="checkin";
+  if(!isCheckin){
+    const layoutOpts=[{v:'default',l:'标准'},{v:'feature',l:'大图'},{v:'quote',l:'引文'}];
+    fields=`<div class="field"><label>卡片样式</label><div class="seg" id="f-layout">${layoutOpts.map(o=>`<div class="opt ${o.v===(d.layout||'default')?'on':''}" data-v="${o.v}">${o.l}</div>`).join("")}</div></div>`+fields;
+  }
 
   // custom fields (from m.fields config) — rendered after type-specific fields
   (m.fields||[]).forEach(f=>{
@@ -1782,8 +1785,10 @@ function openEditor(key, item){
     else if(f.type==="number") fields+=`<div class="field"><label>${esc(f.label)}</label><input id="f-cf-${f.key}" type="number" value="${attr(v)}" placeholder="${attr(f.placeholder||'')}"/></div>`;
     else fields+=`<div class="field"><label>${esc(f.label)}</label><input id="f-cf-${f.key}" value="${attr(v)}" placeholder="${attr(f.placeholder||'')}"/></div>`;
   });
-  // shared image URL field (all types)
-  fields+=`<div class="field"><label>图片 URL（可选）</label><input id="f-image" value="${attr(d.image||'')}" placeholder="https://..."/></div>`;
+  // image URL field — only for non-checkin types
+  if(!isCheckin){
+    fields+=`<div class="field"><label>图片 URL（可选）</label><input id="f-image" value="${attr(d.image||'')}" placeholder="https://..."/></div>`;
+  }
 
   const overlay=document.createElement("div"); overlay.className="overlay";
   overlay.innerHTML=`<div class="modal"><div class="grab"></div>
