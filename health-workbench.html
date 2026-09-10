@@ -806,7 +806,7 @@ $("#drawerClose").innerHTML = icon("close", 16);
 document.querySelectorAll('#nav .n').forEach(n=>{
   const t=n.dataset.nav;
   if(t==="home") n.innerHTML = icon("home",21)+"<span>首页</span>";
-  else if(t==="insight") n.innerHTML = icon("chart",21)+"<span>洞察</span>";
+  else if(t==="insight") n.innerHTML = icon("chart",21)+"<span>打卡建议</span>";
   else n.innerHTML = icon("grid",21)+"<span>模块</span>";
 });
 
@@ -1624,7 +1624,7 @@ function renderInsight(){
   const wArrow = wDelta>0?"↑ +"+wDelta:wDelta<0?"↓ "+wDelta:"→ 持平";
   const wColor = wDelta>0?"var(--danger)":wDelta<0?"var(--module-1)":"var(--text-secondary)";
 
-  $("#screen").innerHTML = `<div class="greet"><div><h1>函哥的洞察</h1><p>各模块进展一览 · 记录—执行—统计—反馈</p></div></div>
+  $("#screen").innerHTML = `<div class="greet"><div><h1>函哥的打卡建议</h1><p>基于近期打卡数据 · 明天怎么吃怎么动这里看</p></div></div>
     <div class="sec-title">模块完成度</div>
     <div class="panel"><div class="ph">${icon("chart",15)} 模块完成度<span class="avg">均 ${barAvg}%</span></div>
       <div class="bar-list">${barList}</div></div>
@@ -2018,7 +2018,7 @@ function go(v){ view=v; closeDrawer(); render(); window.scrollTo({top:0}); }
 function render(){
   // top title
   if(view==="home"){ $("#topTitle").firstChild.textContent="健康管理台"; $("#topSub").textContent=CONFIG.slogan; }
-  else if(view==="insight"){ $("#topTitle").firstChild.textContent="洞察"; $("#topSub").textContent="统计与复盘"; }
+  else if(view==="insight"){ $("#topTitle").firstChild.textContent="打卡建议"; $("#topSub").textContent="明天怎么吃怎么动"; }
   else { const m=modOf(view); $("#topTitle").firstChild.textContent=m?m.name:"健康管理台"; $("#topSub").textContent=m?m.desc:""; }
   // nav active
   $("#nav").querySelector('[data-nav="home"]').classList.toggle("active", view==="home");
@@ -2035,7 +2035,7 @@ function buildDrawer(){
   $("#drawerSlogan").textContent=CONFIG.slogan;
   const items=[`<div class="ditem" data-go="home">${icon("home",20)}首页</div>`]
     .concat(CONFIG.modules.map(m=>`<div class="ditem" data-go="${m.key}">${icon(m.icon,20)}${m.name}</div>`))
-    .concat([`<div class="ditem" data-go="insight">${icon("chart",20)}洞察</div>`]);
+    .concat([`<div class="ditem" data-go="insight">${icon("chart",20)}打卡建议</div>`]);
   $("#drawerList").innerHTML=items.join("");
   $("#drawerList").querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>go(el.dataset.go));
 }
