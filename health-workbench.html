@@ -395,6 +395,39 @@
   .plan-stat .ps { flex:1; text-align:center; padding:8px 4px; border-radius:var(--radius-tile); background:var(--surface-nested); border:1px solid var(--border); }
   .plan-stat .ps .ps-v { font-size:16px; font-weight:800; }
   .plan-stat .ps .ps-l { font-size:10px; color:var(--text-secondary); margin-top:2px; }
+
+  /* ---------- exercise log ---------- */
+  .exlog-panel { margin-top:10px; }
+  .exlog-entry { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-tile);
+    background:var(--surface-nested); border:1px solid var(--border); margin-bottom:6px; }
+  .exlog-entry .el-icon { width:32px; height:32px; border-radius:8px; background:var(--module-3); color:#fff;
+    display:grid; place-items:center; flex:0 0 auto; font-size:14px; }
+  .exlog-entry .el-info { flex:1; min-width:0; }
+  .exlog-entry .el-type { font-size:13px; font-weight:600; color:var(--text); }
+  .exlog-entry .el-meta { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+  .exlog-entry .el-del { flex:0 0 auto; width:28px; height:28px; border-radius:6px; border:none;
+    background:transparent; color:var(--text-tertiary); cursor:pointer; display:grid; place-items:center; }
+  .exlog-entry .el-del:active { background:var(--danger-light); color:var(--danger); }
+  .exlog-rest { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-tile);
+    background:color-mix(in srgb, var(--module-4) 12%, var(--surface-nested)); border:1px solid var(--border);
+    margin-bottom:6px; }
+  .exlog-rest .el-icon { background:var(--module-4); }
+  .exlog-add-bar { display:flex; gap:6px; margin-top:8px; }
+  .exlog-add-bar input { flex:1; min-width:0; border:1px solid var(--border); border-radius:var(--radius-tile);
+    padding:8px 10px; font-size:13px; background:var(--surface-card); color:var(--text); font-family:var(--font); }
+  .exlog-add-bar input::placeholder { color:var(--text-tertiary); }
+  .exlog-add-bar button { flex:0 0 auto; border:none; border-radius:var(--radius-tile); padding:8px 14px;
+    font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); }
+  .exlog-rest-btn { width:100%; border:1px dashed var(--module-4); background:transparent; color:var(--module-4);
+    border-radius:var(--radius-tile); padding:8px; font-size:12px; font-weight:600; cursor:pointer;
+    font-family:var(--font); margin-top:6px; }
+  .exlog-rest-btn:active { background:color-mix(in srgb, var(--module-4) 8%, transparent); }
+  .exlog-empty { text-align:center; padding:12px; color:var(--text-tertiary); font-size:12px; }
+  .exlog-stats { display:flex; gap:6px; margin-bottom:8px; }
+  .exlog-stats .es { flex:1; text-align:center; padding:6px 4px; border-radius:var(--radius-tile);
+    background:var(--surface-nested); border:1px solid var(--border); }
+  .exlog-stats .es .es-v { font-size:14px; font-weight:700; color:var(--module-3); }
+  .exlog-stats .es .es-l { font-size:10px; color:var(--text-secondary); margin-top:1px; }
   .cal-foot { margin-top:12px; font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; }
   .cal-foot svg { color:var(--module-3); }
 
@@ -1105,6 +1138,30 @@ function parseVoiceInput(text){
     }
   });
 
+  // Exercise log: extract type + duration from voice
+  const exTypes = ["篮球","足球","羽毛球","乒乓球","网球","游泳","快走","慢跑","跑步","拉伸","静蹲","靠墙","力量","俯卧撑","引体","哑铃","器械","骑自行车","跳绳","打球","散步","爬山","爬楼梯"];
+  const matchedTypes = exTypes.filter(t=>text.includes(t));
+  let matchedDur = 0;
+  const durPatterns = [
+    {re:/(\d+)\s*分钟/g, mul:1},
+    {re:/(\d+)\s*半小时/g, mul:30},
+    {re:/半小时/g, mul:30},
+    {re:/(\d+)\s*小时/g, mul:60},
+    {re:/一小时/g, mul:60},
+  ];
+  for(const p of durPatterns){
+    const m = p.re.exec(text);
+    if(m){ matchedDur = p.mul===1 ? +m[1] : p.mul; break; }
+  }
+  if(matchedTypes.length > 0 && matchedDur > 0){
+    const t = today();
+    const exlog = data.__exlog || {};
+    exlog[t] = (exlog[t]||[]).filter(x=>x.type!=="rest");
+    exlog[t].push({ type:matchedTypes[0], duration:matchedDur, time:Date.now() });
+    data.__exlog = exlog;
+    results.push({ moduleKey:"__exlog", itemId:0, label:`运动日志: ${matchedTypes[0]} ${matchedDur}分钟`, reason:"语音识别运动记录" });
+  }
+
   // Sleep rules
   VOICE_RULES.sleep.forEach(rule=>{
     const matched = rule.match.some(m=>text.includes(m));
@@ -1581,6 +1638,106 @@ function renderInsight(){
 }
 
 /* ---------- MODULE VIEW ---------- */
+/* ---------- exercise log ---------- */
+function renderExerciseLog(){
+  const t = today();
+  const log = data.__exlog || {};
+  const todayLog = (log[t] || []).filter(x=>x.type !== "rest");
+  const restEntry = (log[t] || []).find(x=>x.type === "rest");
+  const totalMin = todayLog.reduce((s,x)=>s+(+x.duration||0),0);
+
+  let statsHTML = "";
+  if(todayLog.length > 0 || restEntry){
+    statsHTML = `<div class="exlog-stats"><div class="es"><div class="es-v">${todayLog.length}</div><div class="es-l">今日运动</div></div>
+      <div class="es"><div class="es-v">${totalMin}</div><div class="es-l">总时长(分钟)</div></div>
+      <div class="es"><div class="es-v">${restEntry?"休息":"运动"}</div><div class="es-l">今日状态</div></div></div>`;
+  }
+
+  let entriesHTML = "";
+  if(restEntry){
+    entriesHTML = `<div class="exlog-rest"><div class="el-icon">${icon("moon",16)}</div>
+      <div class="el-info"><div class="el-type">今日休息日</div><div class="el-meta">${restEntry.note||"好好恢复"}</div></div>
+      <button class="el-del" data-exlog-del="rest">${icon("trash",14)}</button></div>`;
+  } else {
+    entriesHTML = todayLog.map((e,i)=>{
+      const tm = e.time ? new Date(e.time).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}) : "";
+      return `<div class="exlog-entry"><div class="el-icon">${icon("activity",16)}</div>
+        <div class="el-info"><div class="el-type">${esc(e.type)}</div>
+        <div class="el-meta">${e.duration||0}分钟${e.intensity?" · "+e.intensity:""}${tm?" · "+tm:""}${e.note?" · "+e.note:""}</div></div>
+        <button class="el-del" data-exlog-del="${i}">${icon("trash",14)}</button></div>`;
+    }).join("");
+  }
+
+  const emptyHTML = (!todayLog.length && !restEntry) ? `<div class="exlog-empty">还没有今日运动记录，在下方添加</div>` : "";
+
+  const addBarHTML = restEntry ? "" : `<div class="exlog-add-bar">
+    <input id="exlog-type" placeholder="运动类型（如：篮球）" autocomplete="off" list="exlog-types">
+    <input id="exlog-dur" type="number" placeholder="时长" style="flex:0 0 70px" min="0">
+    <button id="exlog-add" style="background:var(--module-3);color:#fff">添加</button>
+  </div>
+  <datalist id="exlog-types">
+    <option value="篮球"><option value="足球"><option value="羽毛球"><option value="乒乓球">
+    <option value="游泳"><option value="快走"><option value="慢跑"><option value="拉伸">
+    <option value="靠墙静蹲"><option value="力量训练"><option value="骑自行车"><option value="跳绳">
+  </datalist>`;
+
+  const restBtnHTML = restEntry ? "" : `<button class="exlog-rest-btn" id="exlog-rest">今日休息日（生病/受伤/没时间）</button>`;
+
+  return `<div class="panel exlog-panel">
+    <div class="ph">${icon("activity",15)} 今日运动日志 <span class="more">灵活记录</span></div>
+    ${statsHTML}${entriesHTML}${emptyHTML}${addBarHTML}${restBtnHTML}
+  </div>`;
+}
+
+function wireExerciseLog(){
+  const t = today();
+  const log = data.__exlog || {};
+  log[t] = log[t] || [];
+
+  const addBtn = $("#exlog-add");
+  if(addBtn){
+    addBtn.onclick = ()=>{
+      const typeEl = $("#exlog-type");
+      const durEl = $("#exlog-dur");
+      const type = (typeEl.value||"").trim();
+      const dur = +(durEl.value||0);
+      if(!type){ showToast("请输入运动类型"); return; }
+      if(!dur || dur<=0){ showToast("请输入时长（分钟）"); return; }
+      log[t].push({ type, duration:dur, time:Date.now() });
+      data.__exlog = log;
+      persist();
+      typeEl.value=""; durEl.value="";
+      showToast(`函哥，已记录${type} ${dur}分钟`);
+      render(view);
+    };
+  }
+
+  const restBtn = $("#exlog-rest");
+  if(restBtn){
+    restBtn.onclick = ()=>{
+      log[t] = [{ type:"rest", note:"今日休息", time:Date.now() }];
+      data.__exlog = log;
+      persist();
+      showToast("已标记今日为休息日，好好恢复");
+      render(view);
+    };
+  }
+
+  document.querySelectorAll("[data-exlog-del]").forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = btn.dataset.exlogDel;
+      if(idx === "rest"){
+        log[t] = log[t].filter(x=>x.type !== "rest");
+      } else {
+        log[t].splice(+idx, 1);
+      }
+      data.__exlog = log;
+      persist();
+      render(view);
+    };
+  });
+}
+
 function renderModule(key){
   const m=modOf(key); const it=data[key]||[];
   const t=today();
@@ -1614,6 +1771,7 @@ function renderModule(key){
   }
   if(m.type==="checkin") extra=renderCalendar(m,it);
   if(key==="weight") extra=`<div class="panel wc-panel">${weightChartHTML(it)}</div>`;
+  if(key==="exercise") extra=renderExerciseLog();
   const body = it.length ? it.map(x=>recHTML(m,x)).join("")
     : `<div class="empty"><span class="e">${icon(m.icon,26)}</span><div>还没有记录，点上方「新建」添加第一条吧</div></div>`;
   $("#screen").innerHTML = `<div class="greet"><div><h1>${m.name}</h1><p>${m.desc}</p></div>
@@ -1621,6 +1779,7 @@ function renderModule(key){
     <div style="margin-top:16px">${head}${extra}
       <div class="sec-title">记录</div>${body}</div>`;
   wireModule(key);
+  if(key==="exercise") wireExerciseLog();
 }
 
 /* per-module hero header: compact strip — icon + big number + label + optional progress bar */
