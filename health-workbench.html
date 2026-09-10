@@ -373,6 +373,28 @@
     box-shadow:var(--shadow-overlay); z-index:70; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; display:flex; align-items:center; gap:10px; }
   .cal-toast.show { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
   .cal-toast button { background:var(--module-2); color:#fff; border:none; border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; font-family:var(--font); }
+
+  /* ---------- smart plan ---------- */
+  .plan-panel { margin-top: 8px; }
+  .plan-hero { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:var(--radius-tile);
+    background:linear-gradient(135deg, color-mix(in srgb, var(--module-3) 15%, var(--surface-nested)), var(--surface-nested));
+    border:1px solid var(--border); margin-top:10px; }
+  .plan-hero .plan-ic { width:36px; height:36px; border-radius:10px; background:var(--module-3); color:#fff; display:grid; place-items:center; flex:0 0 auto; }
+  .plan-hero .plan-title { font-size:14px; font-weight:700; color:var(--text); }
+  .plan-hero .plan-sub { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+  .plan-sec { margin-top:12px; }
+  .plan-sec-h { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px; }
+  .plan-sec-h .plan-badge { margin-left:auto; font-size:10px; font-weight:600; padding:2px 8px; border-radius:999px; }
+  .plan-card { padding:10px 12px; border-radius:var(--radius-tile); background:var(--surface-nested); border:1px solid var(--border); margin-bottom:6px; }
+  .plan-card .pc-head { display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:var(--text); }
+  .plan-card .pc-head .pc-pct { margin-left:auto; font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; }
+  .plan-card .pc-body { font-size:11.5px; color:var(--text-secondary); margin-top:6px; line-height:1.5; }
+  .plan-card .pc-action { display:inline-block; font-size:11px; font-weight:600; color:#fff; padding:4px 10px; border-radius:999px; margin-top:6px; }
+  .plan-empty { text-align:center; padding:24px 16px; color:var(--text-tertiary); font-size:12px; }
+  .plan-stat { display:flex; gap:8px; margin-top:8px; }
+  .plan-stat .ps { flex:1; text-align:center; padding:8px 4px; border-radius:var(--radius-tile); background:var(--surface-nested); border:1px solid var(--border); }
+  .plan-stat .ps .ps-v { font-size:16px; font-weight:800; }
+  .plan-stat .ps .ps-l { font-size:10px; color:var(--text-secondary); margin-top:2px; }
   .cal-foot { margin-top:12px; font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; }
   .cal-foot svg { color:var(--module-3); }
 
@@ -1355,8 +1377,166 @@ function wireHome(){
 }
 
 /* ---------- INSIGHT ---------- */
+function generateSmartPlanHTML(data, wData){
+  const now = new Date();
+  const days7 = [];
+  for(let i=6; i>=0; i--){ const d=new Date(now); d.setDate(now.getDate()-i); days7.push(d.toISOString().slice(0,10)); }
+
+  function checkinStats(key){
+    const items = data[key] || [];
+    if(!items.length) return { total:0, done:0, pct:0, items:[] };
+    let totalDone = 0, totalPossible = 0;
+    const itemStats = items.map(it=>{
+      let done = 0;
+      days7.forEach(d=>{ if(it.log && it.log[d]) done++; });
+      totalDone += done;
+      totalPossible += 7;
+      return { title: it.title, done, pct: Math.round(done/7*100), id: it.id };
+    });
+    return { total: totalPossible, done: totalDone, pct: totalPossible? Math.round(totalDone/totalPossible*100):0, items: itemStats };
+  }
+
+  const exStats = checkinStats("exercise");
+  const dietStats = checkinStats("diet");
+  const sleepStats = checkinStats("sleep");
+  const overallPct = Math.round((exStats.pct + dietStats.pct + sleepStats.pct) / 3);
+
+  // Weight analysis
+  let wInfo = { trend:"", delta:0, advice:"" };
+  if(wData.length >= 2){
+    const first = +wData[0].weightVal;
+    const latest = +wData[wData.length-1].weightVal;
+    const delta = Math.round((latest - first) * 10) / 10;
+    wInfo.delta = delta;
+    wInfo.trend = delta > 0 ? "上升" : delta < 0 ? "下降" : "持平";
+    if(delta > 0) wInfo.advice = "体重有所上升，需要加强饮食控制和运动量";
+    else if(delta < 0) wInfo.advice = "体重在下降，当前方案有效，继续保持";
+    else wInfo.advice = "体重持平，可以适当增加运动量或调整饮食结构";
+  } else if(wData.length === 1){
+    wInfo.advice = "刚开始记录体重，坚持按周记录，1-2周后可以看到趋势";
+  } else {
+    wInfo.advice = "还没有体重记录，建议每周固定时间称重一次";
+  }
+
+  // Find weak items (pct < 50%)
+  const weakExercise = exStats.items.filter(x=>x.pct<50).sort((a,b)=>a.pct-b.pct);
+  const weakDiet = dietStats.items.filter(x=>x.pct<50).sort((a,b)=>a.pct-b.pct);
+  const weakSleep = sleepStats.items.filter(x=>x.pct<50).sort((a,b)=>a.pct-b.pct);
+
+  // Find strong items (pct >= 75%)
+  const strongExercise = exStats.items.filter(x=>x.pct>=75);
+  const strongDiet = dietStats.items.filter(x=>x.pct>=75);
+
+  // Generate exercise recommendations
+  let exRecs = [];
+  if(exStats.pct < 30){
+    exRecs.push({ title:"运动量严重不足", body:"函哥，过去一周运动打卡率很低。建议从最简单的开始：每天先做10分钟平地快走，不追求强度，先养成习惯。", action:"从今天开始 10 分钟快走", color:"var(--danger)" });
+  } else if(exStats.pct < 60){
+    exRecs.push({ title:"运动需要加量", body:"函哥有一定运动基础但不够稳定。建议把快走时间从10分钟逐步加到30分钟，每次加5分钟。同时加入靠墙静蹲。", action:"本周目标：快走 20 分钟 + 静蹲 2 组", color:"var(--module-3)" });
+  } else if(exStats.pct < 80){
+    exRecs.push({ title:"运动表现不错", body:"函哥的运动打卡率挺好！可以开始尝试增加强度：快走过渡到慢跑，或增加静蹲组数。", action:"本周目标：快走 30 分钟 + 静蹲 3 组", color:"var(--module-1)" });
+  } else {
+    exRecs.push({ title:"运动标杆！", body:"函哥太自律了！运动打卡率超高，可以考虑佩戴运动手环监测心率，进一步科学化训练。", action:"维持当前水平，进阶慢跑", color:"var(--module-1)" });
+  }
+
+  if(weakExercise.find(x=>x.title.includes("静蹲"))){
+    exRecs.push({ title:"靠墙静蹲完成率低", body:"靠墙静蹲是保护膝关节的核心动作。如果觉得难，可以先从30秒开始，背贴墙、膝90度，每天做1组就好。", action:"每天 1 组 30 秒静蹲", color:"var(--module-3)" });
+  }
+  if(weakExercise.find(x=>x.title.includes("拉伸"))){
+    exRecs.push({ title:"拉伸经常漏掉", body:"拉伸虽简单但容易被忽略。建议把拉伸放在运动后立即做，养成"运动完就拉伸"的习惯。", action:"运动后立刻拉伸 10 分钟", color:"var(--module-3)" });
+  }
+
+  // Generate diet recommendations
+  let dietRecs = [];
+  if(dietStats.pct < 30){
+    dietRecs.push({ title:"饮食控制急需改善", body:"函哥，饮食打卡率很低，这样很难减重。建议先从最容易的3项开始：每天喝够2000ml水、不吃宵夜、不喝含糖饮料。", action:"本周重点：水 + 戒糖饮 + 戒宵夜", color:"var(--danger)" });
+  } else if(dietStats.pct < 60){
+    dietRecs.push({ title:"饮食有意识但不够稳定", body:"函哥对饮食有控制意识，但执行不够稳定。建议关注进食顺序（先菜→肉→主食），这个最容易做到但效果最好。", action:"本周重点：每顿先吃绿叶菜", color:"var(--module-1)" });
+  } else if(dietStats.pct < 80){
+    dietRecs.push({ title:"饮食控制不错", body:"函哥饮食执行得挺好！可以进一步优化：午餐主食换成糙米饭，晚餐主食减半。", action:"本周优化：糙米饭 + 晚餐主食减半", color:"var(--module-1)" });
+  } else {
+    dietRecs.push({ title:"饮食模范！", body:"函哥的饮食控制太棒了！可以尝试更精细化：记录每顿饭的饱腹感，找到最适合自己的食量。", action:"维持当前饮食结构", color:"var(--module-1)" });
+  }
+
+  if(weakDiet.find(x=>x.title.includes("粗粮"))){
+    dietRecs.push({ title:"早餐粗粮摄入不足", body:"早餐吃粗粮（玉米/红薯/土豆）能量低、饱腹感强。如果食堂没有粗粮，至少保证牛奶+鸡蛋。", action:"明早选粗粮或牛奶+鸡蛋", color:"var(--module-1)" });
+  }
+  if(weakDiet.find(x=>x.title.includes("瘦肉"))){
+    dietRecs.push({ title:"瘦肉摄入不够", body:"每顿二两瘦肉（100g）能防止减重时肌肉流失。优先选鸡肉、鱼肉，食堂打菜时多要一份肉。", action:"每顿多打一份鸡肉/鱼肉", color:"var(--module-1)" });
+  }
+  if(weakDiet.find(x=>x.title.includes("2000ml"))){
+    dietRecs.push({ title:"饮水量不足", body:"每天2000ml水能加快代谢。建议买个500ml水杯，上午4杯下午4杯，放在桌上看得见的地方。", action:"买个大水杯，上下午各 4 杯", color:"var(--module-1)" });
+  }
+  if(weakDiet.find(x=>x.title.includes("宵夜"))){
+    dietRecs.push({ title:"有吃宵夜习惯", body:"宵夜是减重大敌——吃完就睡，热量全部囤积。如果实在饿，喝杯温水或吃个苹果，别碰高热量食物。", action:"今晚饿了只喝温水", color:"var(--danger)" });
+  }
+
+  // Generate sleep recommendations
+  let sleepRecs = [];
+  if(sleepStats.pct < 30){
+    sleepRecs.push({ title:"作息严重不规律", body:"函哥，睡眠不足会导致皮质醇异常分泌，增加脂肪囤积。建议每天比前一天早睡10分钟，逐步调整到23:00前入睡。", action:"今晚比昨天早睡 10 分钟", color:"var(--danger)" });
+  } else if(sleepStats.pct < 60){
+    sleepRecs.push({ title:"睡眠需要改善", body:"睡眠是减重的关键因素。建议设定23:00闹钟提醒，放下手机，保证8小时睡眠。", action:"设 23:00 睡前闹钟", color:"var(--module-4)" });
+  } else if(sleepStats.pct < 80){
+    sleepRecs.push({ title:"作息还不错", body:"函哥的作息比较规律，继续保持！可以进一步优化睡眠质量：睡前不看手机、保持卧室黑暗。", action:"睡前 15 分钟不看手机", color:"var(--module-4)" });
+  } else {
+    sleepRecs.push({ title:"作息模范！", body:"函哥的作息太规律了！良好的睡眠是减重的最佳助力，继续保持。", action:"维持当前作息", color:"var(--module-4)" });
+  }
+
+  // Build HTML
+  let html = `<div class="sec-title">${icon("compass",15)} 函哥专属智能方案 <span class="more">基于近 7 天数据</span></div>`;
+  html += `<div class="panel plan-panel"><div class="plan-hero"><div class="plan-ic">${icon("compass",18)}</div><div><div class="plan-title">本周执行报告</div><div class="plan-sub">近 7 天综合完成率 ${overallPct}% · ${wInfo.trend ? "体重" + wInfo.trend : "暂无体重数据"}</div></div></div>`;
+
+  // Stats row
+  html += `<div class="plan-stat"><div class="ps"><div class="ps-v" style="color:var(--module-3)">${exStats.pct}%</div><div class="ps-l">运动完成率</div></div><div class="ps"><div class="ps-v" style="color:var(--module-1)">${dietStats.pct}%</div><div class="ps-l">饮食完成率</div></div><div class="ps"><div class="ps-v" style="color:var(--module-4)">${sleepStats.pct}%</div><div class="ps-l">作息完成率</div></div></div>`;
+
+  // Weight analysis
+  if(wData.length >= 2){
+    const wColor = wInfo.delta > 0 ? "var(--danger)" : wInfo.delta < 0 ? "var(--module-1)" : "var(--text-secondary)";
+    html += `<div class="plan-card" style="margin-top:10px"><div class="pc-head">${icon("target",14)} 体重分析<span class="pc-pct" style="background:${wColor}22;color:${wColor}">${wInfo.trend} ${wInfo.delta>0?"+":""}${wInfo.delta}kg</span></div><div class="pc-body">${wInfo.advice}</div></div>`;
+  } else {
+    html += `<div class="plan-card" style="margin-top:10px"><div class="pc-head">${icon("target",14)} 体重分析</div><div class="pc-body">${wInfo.advice}</div></div>`;
+  }
+
+  // Exercise recommendations
+  html += `<div class="plan-sec"><div class="plan-sec-h">${icon("activity",14)} 运动建议<span class="plan-badge" style="background:var(--module-3)22;color:var(--module-3)">${exStats.pct}%</span></div>`;
+  exRecs.forEach(r=>{
+    html += `<div class="plan-card"><div class="pc-head">${icon("check-circle",14)} ${r.title}<span class="pc-pct" style="background:${r.color}22;color:${r.color}">建议</span></div><div class="pc-body">${r.body}</div><div class="pc-action" style="background:${r.color}">${r.action}</div></div>`;
+  });
+  html += `</div>`;
+
+  // Diet recommendations
+  html += `<div class="plan-sec"><div class="plan-sec-h">${icon("leaf",14)} 饮食调整<span class="plan-badge" style="background:var(--module-1)22;color:var(--module-1)">${dietStats.pct}%</span></div>`;
+  dietRecs.forEach(r=>{
+    html += `<div class="plan-card"><div class="pc-head">${icon("check-circle",14)} ${r.title}<span class="pc-pct" style="background:${r.color}22;color:${r.color}">建议</span></div><div class="pc-body">${r.body}</div><div class="pc-action" style="background:${r.color}">${r.action}</div></div>`;
+  });
+  html += `</div>`;
+
+  // Sleep recommendations
+  html += `<div class="plan-sec"><div class="plan-sec-h">${icon("moon",14)} 作息调整<span class="plan-badge" style="background:var(--module-4)22;color:var(--module-4)">${sleepStats.pct}%</span></div>`;
+  sleepRecs.forEach(r=>{
+    html += `<div class="plan-card"><div class="pc-head">${icon("check-circle",14)} ${r.title}<span class="pc-pct" style="background:${r.color}22;color:${r.color}">建议</span></div><div class="pc-body">${r.body}</div><div class="pc-action" style="background:${r.color}">${r.action}</div></div>`;
+  });
+  html += `</div>`;
+
+  // Weekly action plan
+  html += `<div class="plan-sec"><div class="plan-sec-h">${icon("calendar",14)} 本周行动清单</div>`;
+  const actions = [
+    exRecs.length ? exRecs[0].action : "每天 10 分钟快走",
+    dietRecs.length ? dietRecs[0].action : "喝够 2000ml 水",
+    sleepRecs.length ? sleepRecs[0].action : "23:00 前入睡",
+    wInfo.advice ? wInfo.advice.split("。")[0] : "每周称重一次",
+  ];
+  actions.forEach((a,i)=>{
+    html += `<div class="plan-card"><div class="pc-head" style="gap:8px"><span style="width:20px;height:20px;border-radius:50%;background:var(--module-3);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;flex:0 0 auto">${i+1}</span>${a}</div></div>`;
+  });
+  html += `</div>`;
+
+  html += `</div>`;
+  return html;
+}
+
 function renderInsight(){
-  // 模块完成度柱状条
   const DONUT_COLORS=["var(--module-4)","var(--module-3)","var(--module-5)","var(--module-2)","var(--module-1)","var(--danger)","var(--text-tertiary)"];
   const bars = CONFIG.modules.map(m=>{
     const it=data[m.key]||[]; let pct=0, label="";
@@ -1394,7 +1574,9 @@ function renderInsight(){
     <div class="sec-title">体重趋势</div>
     <div class="panel trend-panel"><div class="ph">${icon("target",15)} ${CONFIG.trend.title}${hasTrend?`<span class="avg">${latestW?`最新 ${latestW.weightVal}kg`:`均 ${avg}${CONFIG.trend.unit}`}</span>`:''}</div>
       ${trend}${hasTrend?`<div class="trend-x"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>`:''}
-      ${wData.length>1?`<div class="cal-foot" style="margin-top:10px">${icon("activity",13)} 累计变化 <span style="color:${wColor};font-weight:700">${wArrow} kg</span> · 共 ${wData.length} 条记录</div>`:''}</div>`;
+      ${wData.length>1?`<div class="cal-foot" style="margin-top:10px">${icon("activity",13)} 累计变化 <span style="color:${wColor};font-weight:700">${wArrow} kg</span> · 共 ${wData.length} 条记录</div>`:''}</div>
+    ${generateSmartPlanHTML(data, wData)}
+  `;
   $("#screen").querySelectorAll("[data-open]").forEach(el=>el.onclick=()=>go(el.dataset.open));
 }
 
