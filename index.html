@@ -651,6 +651,18 @@
   </div>
 </aside>
 
+<!-- photo management modal -->
+<div class="photo-modal hidden" id="photoModal">
+  <div class="pm-sheet">
+    <div class="pm-head">
+      <h3>首页照片管理</h3>
+      <button class="pm-close" id="photoModalClose">✕</button>
+    </div>
+    <div class="pm-grid" id="photoGrid"></div>
+    <div class="pm-hint">每天自动轮换一张 · 同一天显示同一张<br>上传越多，每天看到的惊喜越多 🎁</div>
+  </div>
+</div>
+
 <script>
   const DEFAULT_PHOTOS = [
   // photo 1
@@ -2288,24 +2300,22 @@ $("#photoInput").onchange = e => {
 applyTodaysPhoto();
 
 /* ---------- utils ---------- */
+let __toastTimer=null;
+function showToast(msg){
+  let t=document.getElementById("__toast");
+  if(!t){ t=document.createElement("div"); t.id="__toast"; t.style.cssText="position:fixed;left:50%;bottom:calc(var(--nav-h) + 20px);transform:translateX(-50%) translateY(16px);background:var(--surface-card);color:var(--text);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;z-index:300;box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;"; document.body.appendChild(t); }
+  t.textContent=msg;
+  t.style.opacity="1";
+  t.style.transform="translateX(-50%) translateY(0)";
+  clearTimeout(__toastTimer);
+  __toastTimer=setTimeout(()=>{ t.style.opacity="0"; t.style.transform="translateX(-50%) translateY(16px)"; }, 3000);
+}
 function esc(s){ return String(s??"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 
 buildDrawer();
 render();
 </script>
-
-<!-- photo management modal -->
-<div class="photo-modal hidden" id="photoModal">
-  <div class="pm-sheet">
-    <div class="pm-head">
-      <h3>首页照片管理</h3>
-      <button class="pm-close" id="photoModalClose">✕</button>
-    </div>
-    <div class="pm-grid" id="photoGrid"></div>
-    <div class="pm-hint">每天自动轮换一张 · 同一天显示同一张<br>上传越多，每天看到的惊喜越多 🎁</div>
-  </div>
-</div>
 
 </body>
 </html>
