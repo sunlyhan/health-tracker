@@ -433,6 +433,96 @@
 
   .hidden { display: none !important; }
 
+  /* ---------- photo rotation ---------- */
+  .photo-manage-btn {
+    margin: 0 16px 12px;
+    padding: 8px 12px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-tile);
+    background: var(--surface-nested);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    font-family: var(--font);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .photo-manage-btn:active { background: var(--surface-card); }
+
+  .photo-modal {
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(0,0,0,.5);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .photo-modal .pm-sheet {
+    width: 100%; max-height: 85vh;
+    background: var(--surface-card);
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    overflow-y: auto;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .photo-modal .pm-head {
+    display: flex; align-items: center; margin-bottom: 14px;
+  }
+  .photo-modal .pm-head h3 { margin: 0; font-size: 16px; flex: 1; }
+  .photo-modal .pm-close {
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    background: var(--surface-nested); color: var(--text-secondary);
+    cursor: pointer; display: grid; place-items: center;
+  }
+  .photo-modal .pm-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .photo-modal .pm-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-tile);
+    overflow: hidden;
+    border: 2px solid transparent;
+  }
+  .photo-modal .pm-item.active { border-color: var(--module-3); }
+  .photo-modal .pm-item img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-modal .pm-item .pm-del {
+    position: absolute; top: 4px; right: 4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(0,0,0,.6); color: #fff;
+    border: none; cursor: pointer;
+    display: grid; place-items: center;
+    font-size: 14px;
+  }
+  .photo-modal .pm-item .pm-index {
+    position: absolute; bottom: 4px; left: 4px;
+    background: rgba(0,0,0,.6); color: #fff;
+    font-size: 10px; padding: 2px 6px; border-radius: 999px;
+  }
+  .photo-modal .pm-add {
+    aspect-ratio: 1;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-tile);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px; color: var(--text-tertiary);
+    cursor: pointer; font-size: 11px;
+    background: var(--surface-nested);
+  }
+  .photo-modal .pm-add:active { background: var(--surface-card); }
+  .photo-modal .pm-hint {
+    font-size: 12px; color: var(--text-secondary);
+    text-align: center; padding: 8px;
+    line-height: 1.5;
+  }
+
   /* ---------- weight chart (full history) ---------- */
   .wc-panel { margin-top: 12px; }
   .wc-head { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; }
@@ -545,8 +635,10 @@
     <button class="dclose" id="drawerClose"></button>
     <div class="brand" id="drawerBrand" title="点击更换头像"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="头像" id="brandImg"/><span class="brand-cam" id="brandCam"></span></div>
     <input type="file" id="avatarInput" accept="image/*" hidden/>
+    <input type="file" id="photoInput" accept="image/*" multiple hidden/>
     <div><h2 id="drawerName">我的工作台</h2><p id="drawerSlogan">Personal Workbench</p></div>
   </div>
+  <div class="photo-manage-btn" id="photoManageBtn">🖼️ 管理首页照片 · 每天换一张</div>
   <div class="dsep"></div>
   <div id="drawerList"></div>
   <div class="dsep"></div>
@@ -2068,6 +2160,102 @@ $("#avatarInput").onchange = e => {
   e.target.value = "";
 };
 
+/* ---------- photo rotation ---------- */
+function getTodaysPhoto(){
+  const photos = data.__photos || [];
+  if(photos.length === 0) return null;
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now - start;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  const idx = dayOfYear % photos.length;
+  return { src: photos[idx], index: idx, total: photos.length };
+}
+
+function applyTodaysPhoto(){
+  const photo = getTodaysPhoto();
+  if(photo){
+    document.documentElement.style.setProperty('--greet-image', `url("${photo.src}")`);
+  }
+}
+
+function renderPhotoGrid(){
+  const photos = data.__photos || [];
+  const today = getTodaysPhoto();
+  const grid = $("#photoGrid");
+  let html = "";
+  photos.forEach((p,i)=>{
+    const isToday = today && today.index === i;
+    html += `<div class="pm-item ${isToday?'active':''}">
+      <img src="${p}" alt="照片${i+1}">
+      <button class="pm-del" data-photo-del="${i}">✕</button>
+      <span class="pm-index">${isToday?'今日':'第'+(i+1)+'张'}</span>
+    </div>`;
+  });
+  html += `<div class="pm-add" id="photoAddBtn">
+    <span style="font-size:24px">+</span>
+    <span>添加照片</span>
+  </div>`;
+  grid.innerHTML = html;
+
+  grid.querySelectorAll("[data-photo-del]").forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      const idx = +btn.dataset.photoDel;
+      if(photos.length <= 1){
+        showToast("至少保留一张照片哦");
+        return;
+      }
+      photos.splice(idx, 1);
+      data.__photos = photos;
+      persist();
+      renderPhotoGrid();
+      applyTodaysPhoto();
+      if(view==="home") render();
+    };
+  });
+
+  $("#photoAddBtn").onclick = () => $("#photoInput").click();
+}
+
+$("#photoManageBtn").onclick = ()=>{
+  closeDrawer();
+  renderPhotoGrid();
+  $("#photoModal").classList.remove("hidden");
+};
+$("#photoModalClose").onclick = ()=> $("#photoModal").classList.add("hidden");
+$("#photoModal").onclick = (e)=>{
+  if(e.target.id === "photoModal") $("#photoModal").classList.add("hidden");
+};
+$("#photoInput").onchange = e => {
+  const files = e.target.files;
+  if(!files || !files.length) return;
+  const photos = data.__photos || [];
+  let loaded = 0;
+  const total = files.length;
+  for(let i=0; i<total; i++){
+    const reader = new FileReader();
+    reader.onload = () => {
+      photos.push(reader.result);
+      loaded++;
+      if(loaded === total){
+        data.__photos = photos;
+        persist();
+        renderPhotoGrid();
+        applyTodaysPhoto();
+        if(view==="home") render();
+        showToast(`函哥，已添加 ${total} 张照片`);
+      }
+    };
+    reader.readAsDataURL(files[i]);
+  }
+  e.target.value = "";
+};
+
+// Initialize photo on load
+applyTodaysPhoto();
+
 /* ---------- utils ---------- */
 function esc(s){ return String(s??"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
@@ -2075,5 +2263,18 @@ function attr(s){ return esc(s).replace(/"/g,'&quot;'); }
 buildDrawer();
 render();
 </script>
+
+<!-- photo management modal -->
+<div class="photo-modal hidden" id="photoModal">
+  <div class="pm-sheet">
+    <div class="pm-head">
+      <h3>首页照片管理</h3>
+      <button class="pm-close" id="photoModalClose">✕</button>
+    </div>
+    <div class="pm-grid" id="photoGrid"></div>
+    <div class="pm-hint">每天自动轮换一张 · 同一天显示同一张<br>上传越多，每天看到的惊喜越多 🎁</div>
+  </div>
+</div>
+
 </body>
 </html>
