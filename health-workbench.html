@@ -90,8 +90,8 @@
   svg { display: block; }
 
   /* ---------- top bar ---------- */
-  .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px;
-    padding: 14px 2px 12px; backdrop-filter: blur(10px);
+  .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 2px 8px; backdrop-filter: blur(10px);
     background: linear-gradient(180deg, color-mix(in srgb, var(--page-bg) 94%, transparent), color-mix(in srgb, var(--page-bg) 50%, transparent)); }
   .topbar .menu-btn { width: 38px; height: 38px; border: none; border-radius: var(--radius-tile); background: var(--surface-card);
     box-shadow: var(--shadow-card); display: grid; place-items: center; cursor: pointer; color: var(--text); }
@@ -103,23 +103,23 @@
 
   /* ---------- generic card / section ---------- */
   .card { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
-  .sec-title { display:flex; align-items:center; gap:9px; font-size: 14px; font-weight: 700; margin: 24px 2px 12px; letter-spacing: -.01em; }
+  .sec-title { display:flex; align-items:center; gap:9px; font-size: 13px; font-weight: 700; margin: 14px 2px 8px; letter-spacing: -.01em; }
   .sec-title::before { content:""; width: 3px; height: 13px; border-radius: 2px; background: var(--accent); }
   .sec-title .more { margin-left:auto; font-size: 12px; color: var(--text-secondary); font-weight: 500; cursor: pointer; display:inline-flex; align-items:center; gap:2px; }
   .sec-title .more svg { color: var(--text-tertiary); }
 
   /* ---------- greeting ---------- */
-  .greet { position: relative; overflow: hidden; margin-top: 10px; padding: 26px 22px 28px; border-radius: var(--radius-card);
-    border: 1px solid var(--border); box-shadow: var(--shadow-card); min-height: 200px;
+  .greet { position: relative; overflow: hidden; margin-top: 6px; padding: 16px 18px 18px; border-radius: var(--radius-card);
+    border: 1px solid var(--border); box-shadow: var(--shadow-card); min-height: 130px;
     background: var(--surface-nested) var(--greet-image) right center / auto 100% no-repeat; }
   .greet::before { content:""; position:absolute; inset:0; pointer-events:none;
     background: linear-gradient(95deg, var(--surface-nested) 30%, color-mix(in srgb, var(--surface-nested) 50%, transparent) 50%, transparent 72%); }
   .greet::after { content:""; position:absolute; inset:0; pointer-events:none;
     background: linear-gradient(180deg, transparent 60%, color-mix(in srgb, var(--surface-nested) 40%, transparent) 100%); }
   .greet > * { position: relative; z-index: 1; }
-  .greet h1 { font-size: 26px; font-weight: 800; letter-spacing: -.03em; }
-  .greet p { color: var(--text-secondary); font-size: 13px; margin-top: 5px; }
-  .greet .greet-motto { margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--module-3);
+  .greet h1 { font-size: 20px; font-weight: 800; letter-spacing: -.03em; }
+  .greet p { color: var(--text-secondary); font-size: 12px; margin-top: 3px; }
+  .greet .greet-motto { margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--module-3);
     letter-spacing: .02em; opacity: .85; }
   .greet .add { position: absolute; top: 16px; right: 16px; z-index: 2; border:none; cursor:pointer;
     display:inline-flex; align-items:center; gap:6px; background: var(--accent); color:var(--on-accent);
@@ -129,52 +129,52 @@
   .greet .add svg { margin-top: -1px; }
 
   /* ---------- quote card ---------- */
-  .quote { margin-top: 16px; padding: 18px 20px 18px 22px; border-radius: var(--radius-card);
+  .quote { margin-top: 8px; padding: 12px 16px 12px 18px; border-radius: var(--radius-card);
     background: var(--surface-card); border: 1px solid var(--border); box-shadow: var(--shadow-card); position: relative; }
-  .quote::before { content:""; position:absolute; left:0; top:14px; bottom:14px; width:3px; border-radius:2px; background: var(--module-3); }
-  .quote .tag { display:inline-flex; align-items:center; gap:6px; font-size: 11px; font-weight: 700; color: var(--text-secondary);
-    letter-spacing: .04em; margin-bottom: 9px; }
+  .quote::before { content:""; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:2px; background: var(--module-3); }
+  .quote .tag { display:inline-flex; align-items:center; gap:6px; font-size: 10px; font-weight: 700; color: var(--text-secondary);
+    letter-spacing: .04em; margin-bottom: 6px; }
   .quote .tag svg { color: var(--text-tertiary); }
-  .quote .txt { font-size: 16px; font-weight: 600; line-height: 1.55; color: var(--text); }
+  .quote .txt { font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--text); }
 
   /* ---------- overview rings ---------- */
-  .rings { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 20px 6px; margin-top: 14px; }
-  .ring { display:flex; flex-direction:column; align-items:center; gap: 8px; }
-  .ring .dial { position: relative; width: 68px; height: 68px; }
-  .ring .dial svg.gauge { transform: rotate(-90deg); width: 68px; height: 68px; }
+  .rings { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 10px 4px; margin-top: 8px; }
+  .ring { display:flex; flex-direction:column; align-items:center; gap: 5px; }
+  .ring .dial { position: relative; width: 54px; height: 54px; }
+  .ring .dial svg.gauge { transform: rotate(-90deg); width: 54px; height: 54px; }
   .ring .dial .mid { position:absolute; inset:0; display:grid; place-items:center; }
-  .ring .pct { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
-  .ring .lbl { font-size: 12px; color: var(--text); font-weight: 600; }
-  .ring .sub { font-size: 11px; color: var(--text-secondary); }
+  .ring .pct { font-size: 13px; font-weight: 700; letter-spacing: -.02em; }
+  .ring .lbl { font-size: 11px; color: var(--text); font-weight: 600; }
+  .ring .sub { font-size: 10px; color: var(--text-secondary); }
 
   /* ---------- trend + quick record ---------- */
-  .panel { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 14px; }
-  .panel.trend-panel { margin-top: 12px; }
+  .panel { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 12px; }
+  .panel.trend-panel { margin-top: 8px; }
   .panel .ph { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; }
   .panel .ph svg { color: var(--text-tertiary); }
   .panel .ph .avg { margin-left:auto; font-size:11px; color:var(--text-secondary); font-weight:500; }
-  .trend-svg { width:100%; height: auto; margin-top: 12px; display:block; }
+  .trend-svg { width:100%; height: auto; margin-top: 8px; display:block; }
   .trend-x { display:flex; justify-content:space-between; font-size:10px; color:var(--text-secondary); margin-top:4px; padding: 0 6px; }
-  .trend-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; height: 120px;
-    color: var(--text-tertiary); font-size: 12px; margin-top: 8px; }
-  .quick-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .qbtn { display:flex; flex-direction:column; align-items:center; gap:9px; padding: 15px 6px 12px; border:none; cursor:pointer;
+  .trend-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; height: 80px;
+    color: var(--text-tertiary); font-size: 11px; margin-top: 6px; }
+  .quick-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .qbtn { display:flex; flex-direction:column; align-items:center; gap:6px; padding: 10px 4px 8px; border:none; cursor:pointer;
     border-radius: var(--radius-tile); background: var(--surface-card); border:1px solid var(--border); box-shadow: var(--shadow-card);
     text-align:center; transition: transform .12s, border-color .15s, box-shadow .15s; }
   .qbtn:active { transform: scale(.95); border-color: var(--border-input); box-shadow: var(--shadow-overlay); }
-  .qbtn .e { position: relative; width: 44px; height: 44px; border-radius: var(--radius-tile); display:grid; place-items:center; }
-  .qbtn .e .qplus { position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%;
+  .qbtn .e { position: relative; width: 36px; height: 36px; border-radius: var(--radius-tile); display:grid; place-items:center; }
+  .qbtn .e .qplus { position:absolute; right:-3px; bottom:-3px; width:15px; height:15px; border-radius:50%;
     background: var(--accent); color:var(--on-accent); display:grid; place-items:center; border: 2px solid var(--surface-card); }
-  .qbtn .l { font-size: 12px; font-weight: 600; color: var(--text); }
+  .qbtn .l { font-size: 11px; font-weight: 600; color: var(--text); }
 
   /* ---------- pinned tasks ---------- */
-  .pin-list { display:flex; flex-direction:column; gap: 8px; }
-  .pin { display:flex; align-items:center; gap: 11px; padding: 12px 14px; border-radius: var(--radius-tile);
+  .pin-list { display:flex; flex-direction:column; gap: 6px; }
+  .pin { display:flex; align-items:center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-tile);
     background: var(--surface-card); border: 1px solid var(--border); box-shadow: var(--shadow-card); }
-  .pin-ic { width: 32px; height: 32px; border-radius: var(--radius-tile); display:grid; place-items:center; flex:0 0 auto;
+  .pin-ic { width: 28px; height: 28px; border-radius: var(--radius-tile); display:grid; place-items:center; flex:0 0 auto;
     background: var(--surface-nested); border: 1px solid var(--border); }
   .pin-b { flex:1; min-width:0; cursor:pointer; }
-  .pin-t { font-size: 14px; font-weight: 600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pin-t { font-size: 13px; font-weight: 600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .pin-t.done { text-decoration: line-through; color: var(--text-secondary); }
   .pin-m { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
   .pin .arw { color: var(--text-tertiary); flex:0 0 auto; }
@@ -407,19 +407,19 @@
   .rec.collapsible .acts { top:10px; right:8px; }
 
   /* ---------- daily food suggestion (home) ---------- */
-  .food-panel { margin-top: 14px; }
+  .food-panel { margin-top: 8px; }
   .food-head { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; }
   .food-head svg { color: var(--text-tertiary); }
   .food-head .food-tip { margin-left:auto; font-size:10px; font-weight:500; color:var(--text-tertiary); }
-  .food-meals { display:flex; flex-direction:column; gap:9px; margin-top:12px; }
-  .food-meal { display:flex; align-items:flex-start; gap:10px; padding:11px 12px; border-radius:var(--radius-tile);
+  .food-meals { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .food-meal { display:flex; align-items:flex-start; gap:10px; padding:9px 10px; border-radius:var(--radius-tile);
     background:var(--surface-nested); border:1px solid var(--border); }
-  .food-meal .meal-label { flex:0 0 auto; font-size:12px; font-weight:700; color:var(--text-secondary);
-    width:48px; text-align:center; padding-top:1px; }
-  .food-meal .meal-label .meal-emoji { display:block; font-size:18px; margin-bottom:2px; }
+  .food-meal .meal-label { flex:0 0 auto; font-size:11px; font-weight:700; color:var(--text-secondary);
+    width:42px; text-align:center; padding-top:1px; }
+  .food-meal .meal-label .meal-emoji { display:block; font-size:16px; margin-bottom:1px; }
   .food-meal .meal-items { flex:1; min-width:0; }
-  .food-meal .meal-main { font-size:13.5px; font-weight:600; color:var(--text); line-height:1.5; }
-  .food-meal .meal-sub { font-size:11.5px; color:var(--text-secondary); margin-top:4px; line-height:1.5; }
+  .food-meal .meal-main { font-size:12.5px; font-weight:600; color:var(--text); line-height:1.45; }
+  .food-meal .meal-sub { font-size:10.5px; color:var(--text-secondary); margin-top:3px; line-height:1.45; }
   .food-meal .meal-tag { display:inline-block; font-size:10px; font-weight:600; padding:1px 7px; border-radius:999px;
     margin-right:4px; margin-top:5px; }
 
